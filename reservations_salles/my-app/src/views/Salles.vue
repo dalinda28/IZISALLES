@@ -80,8 +80,14 @@
                   <td> {{ salle.nom }} </td>
                   <td> {{ salle.places }} </td>
                   <td> {{ salle.postes_etud }} </td>
-                  <td> {{ salle.poste_prof }} </td>
-                  <td> {{ salle.climatisation }} </td>
+                  <td> 
+                        <span v-if="salle.poste_prof.data[0] === 1"> Oui </span> 
+                        <span v-else> Non </span> 
+                    </td>
+                    <td> 
+                        <span v-if="salle.climatisation.data[0] === 1"> Oui </span> 
+                        <span v-else> Non </span> 
+                    </td>
                   <td> <button class="btn btn-sm btn-outline-secondary" v-bind:id="salle.id" @click="confirmerReserv(salle.id)" :disabled="timeExpired()"> <span v-if="!timeExpired()">Réserver</span><span v-else>Délai passé</span> </button> </td>
                       
                   </tr>
@@ -112,12 +118,12 @@
                   <span>Nombre de places: {{ selectedSalle.places }}</span> <br>
                   <span>Nombre postes étudiant: {{ selectedSalle.postes_etud }}</span> <br>
                   <span>Poste enseignant:
-                    <span v-if="selectedSalle.poste_prof === '1'"> Oui </span>
-                    <span v-else> Non </span>
+                    <span v-if="selectedSalle.poste_prof.data[0] === 1"> Oui </span> 
+                    <span v-else> Non </span> 
                   </span> <br>
                   <span>Climatisation: 
-                    <span v-if="selectedSalle.climatisation === '1'"> Oui </span>
-                    <span v-else> Non </span>
+                    <span v-if="selectedSalle.climatisation.data[0] === 1"> Oui </span> 
+                    <span v-else> Non </span> 
                   </span> <br>
                 </div>
               </div>
@@ -187,18 +193,21 @@ export default {
     },
     
     mounted() {
-        this.salles = axios.get("http://localhost:8888/reservations_salles/src/api/controllers/SallesResource.php")
+        this.refreshData();
+    },
+    methods: {    
+        refreshData(){
+            this.salles = axios.get("http://localhost:3000/salles")
             .then((response) => {
                 this.salles = response.data;
                 this.resultatSalles = this.salles;
-                this.reservations = axios.get("http://localhost:8888/reservations_salles/src/api/controllers/ReservationsResource.php")
+                this.reservations = axios.get("http://localhost:3000/reservations")
                     .then((response) => {
                         this.reservations = response.data;
                         this.changeResults();
                 });   
             });
-    },
-    methods: {
+        }, 
         confirmerReserv(id_salle){
             this.selectedSalle = this.salles.filter(salle => salle.id == id_salle)[0];
             this.showSaveModal = true;
@@ -206,18 +215,23 @@ export default {
         saveReserv: function (){
             this.showSaveModal = false;
             this.showReponseModal = true;
-            let formData = new FormData();
-            formData.append('id_salle', this.selectedSalle.id);
-            formData.append('id_user', this.$store.state.id_user);
-            formData.append('date', this.dateString);
-            formData.append('heure', this.heure);
-            axios.post("http://localhost:8888/reservations_salles/src/api/controllers/ReservationsResource.php", formData)
+            
+            axios.post("http://localhost:3000/reservations", {
+                'id_salle': this.selectedSalle.id,
+                'id_user': this.$store.state.id_user,
+                'date': this.dateString,
+                'heure': this.heure
+            })
             .then((response) => {
-                if (response.data){
-                    document.getElementById("reponseReserv").textContent = "Votre réservation a été validée avec succès"
+                if (response.data === "inserted"){
+                    document.getElementById("reponseReserv").textContent = "Votre réservation a été validée avec succès";
+                    this.refreshData();
                 }
-                else{
+                else if (response.data == "exists_reservation"){
                     document.getElementById("reponseReserv").textContent = "Votre réservation n'est plus disponible"
+                }
+                else {
+                    document.getElementById("reponseReserv").textContent = "Problème serveur"
                 }
             })
         },
@@ -239,8 +253,8 @@ export default {
         },
         changeSalles(){
             this.resultatSalles = this.salles;
-            this.resultatSalles = this.criteres.poste_prof === true ? this.resultatSalles.filter(salle => salle.poste_prof === "1") : this.resultatSalles;
-            this.resultatSalles = this.criteres.climatisation === true ? this.resultatSalles.filter(salle => salle.climatisation === "1") : this.resultatSalles;
+            this.resultatSalles = this.criteres.poste_prof === true ? this.resultatSalles.filter(salle => salle.poste_prof.data[0] === 1) : this.resultatSalles;
+            this.resultatSalles = this.criteres.climatisation === true ? this.resultatSalles.filter(salle => salle.climatisation .data[0] === 1) : this.resultatSalles;
             this.resultatSalles = this.criteres.nom != "" ? this.resultatSalles.filter(salle => salle.nom === this.criteres.nom) : this.resultatSalles;
             this.resultatSalles = this.resultatSalles.filter(salle => parseInt(salle.places,10) >= parseInt(this.criteres.places,10));
             this.resultatSalles = this.resultatSalles.filter(salle => parseInt(salle.postes_etud, 10) >= parseInt(this.criteres.postes_etud, 10));
@@ -248,7 +262,7 @@ export default {
 
         changeReservations(){
             this.resultatReserv = this.reservations;
-            this.resultatReserv = this.reservations.filter(reservation => reservation.date === this.dateString && reservation.heure === this.heure);
+            this.resultatReserv = this.reservations.filter(reservation => this.formatDate(new Date(reservation.date)) === this.dateString && reservation.heure === this.heure);
         },
 
         formatDate(d){

@@ -12,12 +12,12 @@
                             <p class="alert alert-danger" v-if="error">{{ error }}</p>
                             <p class="alert alert-danger" v-if="alert">{{ alert }}</p>
                             <div class="col-lg-7">
-                                <input @keyup.enter="login()" type="mail" placeholder="test@gmail.fr" v-model="mail" class="form-control my-3 p-4">
+                                <input type="mail" @keyup.enter="login()" placeholder="test@gmail.fr" v-model="mail" class="form-control my-3 p-4">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-lg-7">
-                                <input @keyup.enter="login()" type="password" placeholder="*********" v-model="mdp" class="form-control my-3 p-4">
+                                <input type="password" @keyup.enter="login()" placeholder="*********" v-model="mdp" class="form-control my-3 p-4">
                             </div>
                         </div>
                         <div class="form-row">
@@ -59,7 +59,7 @@ export default {
     methods:{
         login(){
             if (this.mail != '' && this.mdp != '') {
-                this.axios.get("http://localhost:8888/reservations_salles/src/api/controllers/UsersResource.php")
+                this.axios.get("http://localhost:3000/users")
                     .then((response) => {
                         for (let i = 0; i < response.data.length; i++) {
                                 // Vérification du mot de passe (décryptage) et adresse mail 
@@ -105,12 +105,15 @@ body{
 .container{
     margin-top: 6%;
 }
+
 .row{
     background: white;
     border-radius: 30px;
     box-shadow: 12px 12px 22px grey;
 }
-.imgroom{
+.img-fluid{
+    max-width: 100%;
+    height: auto;
     border-top-left-radius: 30px;
     border-bottom-left-radius: 30px;
 }

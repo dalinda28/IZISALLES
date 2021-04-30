@@ -5,7 +5,7 @@
                 <h1 class="hellobar text-center text-light display-4 pt-2">Bonjour {{ $store.state.firstName }}</h1>
             </div>
             <div class="col-lg-12 bg-secondary">
-                <h2 class="titlebar text-center text-light display-4 pt-2">Gestion des utilisateurs</h2>
+                <h2 class="titlebar text-center text-light display-4 pt-2">Gestion des users</h2>
             </div>
         </div> 
         <div class="row">
@@ -191,15 +191,14 @@ name: 'app',
         addUser(){
             if (this.canAddUser()) {
                 var hashedPassword = bcrypt.hashSync(this.userData.mdp, 10);     
-
-                let formData = new FormData();
-                formData.append('nom', this.userData.nom);
-                formData.append('prenom', this.userData.prenom);
-                formData.append('mail', this.userData.mail);
-                formData.append('profil', 'enseignant');
-                formData.append('mdp', hashedPassword);
                 
-                axios.post("http://localhost:8888/reservations_salles/src/api/controllers/UsersResource.php", formData) 
+                axios.post("http://localhost:3000/users", {
+                    "nom": this.userData.nom,
+                    "prenom": this.userData.prenom,
+                    "profil": 'enseignant',
+                    "mail": this.userData.mail,
+                    "mdp": hashedPassword
+                    }) 
                 .then((response) => {
                     var msg = "";
                     if (response.data === "inserted"){
@@ -234,14 +233,14 @@ name: 'app',
         },
 
         updateUser(){
-            axios.put("http://localhost:8888/reservations_salles/src/api/controllers/UsersResource.php", 
-                JSON.stringify({
-                    id: this.userData.id,
-                    nom: this.userData.nom,
-                    prenom: this.userData.prenom,
-                    mail: this.userData.mail,
-                    mdp: this.userData.mdp
-                }))
+            var hashedPassword = bcrypt.hashSync(this.userData.mdp, 10);  
+            axios.put("http://localhost:3000/users/"+this.userData.id, {
+                    "nom": this.userData.nom,
+                    "prenom": this.userData.prenom,
+                    "profil": 'enseignant',
+                    "mail": this.userData.mail,
+                    "mdp": hashedPassword
+                    })
                 .then((response) => {
                     if (response.data === "updated"){
                         this.showEditModal = false;
@@ -264,11 +263,11 @@ name: 'app',
 
         deleteUser(){
             //On supprime toutes les réservations de l'user
-            axios.delete("http://localhost:8888/reservations_salles/src/api/controllers/ReservationsResource.php?id_user="+this.selectedUser.id)
+            axios.delete("http://localhost:3000/reservations/"+this.selectedUser.id)
             .then((response) => {
                 if (response.data === "ok"){
                     //On supprime l'user
-                    axios.delete("http://localhost:8888/reservations_salles/src/api/controllers/UsersResource.php?id="+this.selectedUser.id)
+                    axios.delete("http://localhost:3000/users/"+this.selectedUser.id)
                     .then((response) => {
                         //Réponse de requête réussie
                         if (response.data === "ok"){
@@ -291,7 +290,7 @@ name: 'app',
 
         //rechargement / rafraîchissement automatique des données
         refreshUsers(){
-            this.users = axios.get("http://localhost:8888/reservations_salles/src/api/controllers/UsersResource.php")
+            this.users = axios.get("http://localhost:3000/users")
             .then((response) => {
                 this.users = response.data;
                 this.results = [];

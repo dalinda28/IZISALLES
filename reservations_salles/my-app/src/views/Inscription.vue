@@ -12,22 +12,22 @@
                             <span id="error_msg"></span>
                             <div class="form-row">
                                 <div class="col-lg-7">
-                                    <input @keyup.enter="AddUsers()" type="Nom" v-model="userData.nom" placeholder="Nom" class="form-control my-3 p-4" required>
+                                    <input type="Nom" @keyup.enter="addUser()" v-model="userData.nom" placeholder="Nom" class="form-control my-3 p-4" required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="col-lg-7">
-                                    <input @keyup.enter="AddUsers()" type="Prenom" v-model="userData.prenom" placeholder="Prénom" class="form-control my-3 p-4" required>
+                                    <input type="Prenom" @keyup.enter="addUser()" v-model="userData.prenom" placeholder="Prénom" class="form-control my-3 p-4" required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="col-lg-7">
-                                    <input @keyup.enter="AddUsers()" type="mail" v-model="userData.mail" placeholder="test@gmail.com" class="form-control my-3 p-4" required>
+                                    <input type="mail" @keyup.enter="addUser()" v-model="userData.mail" placeholder="test@gmail.com" class="form-control my-3 p-4" required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="col-lg-7">
-                                    <input @keyup.enter="AddUsers()" type="password" v-model="userData.mdp" placeholder="*********" class="form-control my-3 p-4" required>
+                                    <input type="password" @keyup.enter="addUser()" v-model="userData.mdp" placeholder="*********" class="form-control my-3 p-4" required>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -86,7 +86,13 @@ export default {
                 formData.append('profil', 'enseignant');
                 formData.append('mdp', hashedPassword);
                 
-                axios.post("http://localhost:8888/reservations_salles/src/api/controllers/UsersResource.php", formData) 
+                axios.post("http://localhost:3000/users", {
+                    nom: this.userData.nom,
+                    prenom: this.userData.prenom,
+                    profil: 'enseignant',
+                    mail: this.userData.mail,
+                    mdp: hashedPassword
+                    }) 
                 .then((response) => {
                     var msg = "";
                     if (response.data === "inserted"){
