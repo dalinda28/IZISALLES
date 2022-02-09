@@ -38,7 +38,7 @@
                                 </th>
                             </tr>
                             <tr class="text-center bg-info text-light">
-                                <th scope="col"> Nom </th>
+                                 <th scope="col"> Nom </th>
                                 <th scope="col"> Nombre de places </th>
                                 <th scope="col"> Nombre d'ordinateurs étudiant </th>
                                 <th scope="col"> Ordinateur enseignant </th>
@@ -50,14 +50,8 @@
                                 <td> {{ salle.nom }} </td>
                                 <td> {{ salle.places }} </td>
                                 <td> {{ salle.postes_etud }} </td>
-                                <td> 
-                                    <span v-if="salle.poste_prof.data[0] === 1"> Oui </span> 
-                                    <span v-else> Non </span> 
-                                </td>
-                                <td> 
-                                    <span v-if="salle.climatisation.data[0] === 1"> Oui </span> 
-                                    <span v-else> Non </span> 
-                                </td>
+                                <td> {{ salle.poste_prof }} </td>
+                                <td> {{ salle.climatisation }} </td>
                             </tr>
                         </tbody>
                     </table>
@@ -85,7 +79,7 @@ export default {
         }
     },
     mounted() {
-        this.salles = axios.get("http://localhost:3000/salles")
+        this.salles = axios.get("http://localhost:8888/reservations_salles/src/api/controllers/SallesResource.php")
             .then((response) => {
             this.salles = response.data;
             for (var key in this.salles){
@@ -99,8 +93,8 @@ export default {
             for (var key in this.salles){
                 this.results[key] = this.salles[key];
             }
-            this.results = this.filters.poste_prof === "true" ? this.results.filter(salle => salle.poste_prof.data[0] === 1) : this.filters.poste_prof === "false" ? this.results.filter(salle => salle.poste_prof.data[0] === 0): this.results;
-            this.results = this.filters.climatisation === "true" ? this.results.filter(salle => salle.climatisation.data[0] === 1): this.filters.climatisation === "false" ? this.results.filter(salle => salle.climatisation.data[0] === 0) : this.results;
+            this.results = this.filters.poste_prof === "true" ? this.results.filter(salle => salle.poste_prof === "1") : this.filters.poste_prof === "false" ? this.results.filter(salle => salle.poste_prof === "0"): this.results;
+            this.results = this.filters.climatisation === "true" ? this.results.filter(salle => salle.climatisation === "1"): this.filters.climatisation === "false" ? this.results.filter(salle => salle.climatisation === "0") : this.results;
             this.results = this.filters.nom != "" ? this.results.filter(salle => salle.nom === this.filters.nom) : this.results;
             this.results = this.results.filter(salle => parseInt(salle.places,10) >= parseInt(this.filters.places,10));
             this.results = this.results.filter(salle => parseInt(salle.postes_etud, 10) >= parseInt(this.filters.postes_etud, 10));

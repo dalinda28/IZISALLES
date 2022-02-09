@@ -46,12 +46,12 @@
                                 <td>{{ reservation.details_reservation.id }}</td>
                                 <td>{{ reservation.details_salle.nom}} </td>
                                 <td>{{ reservation.details_user.nom }} &nbsp;{{ reservation.details_user.prenom }} </td>
-                                <td>{{ formatDate(new Date(reservation.details_reservation.date)) }}</td>
+                                <td>{{ reservation.details_reservation.date }}</td>
                                 <td>
                                     <span v-if="reservation.details_reservation.heure === 'matin'"> Matin</span> 
                                     <span v-else> Après-midi</span> 
                                 </td>
-                                <td class="text-center"><button class="btn btn-sm btn-info" type="button" @click="modifier" :disabled="timeExpired(reservation.details_reservation.id)">Modifier</button></td>
+                                <td><button class="btn btn-sm btn-info" @click="modifier" > Modifier </button></td>
                                 <td><button class="btn btn-sm btn-danger" type="button" @click="openDeleteDialog(reservation.details_reservation.id)"> Supprimer </button></td>
                             </tr>
                         </tbody>
@@ -87,17 +87,17 @@
                                 <span>Nombre de places: {{ selectedReserv.details_salle.places }}</span> <br>
                                 <span>Nombre postes étudiant: {{ selectedReserv.details_salle.postes_etud }}</span> <br>
                                 <span>Poste enseignant:
-                                    <span v-if="selectedReserv.details_salle.poste_prof.data[0] === 1"> Oui </span>
+                                    <span v-if="selectedReserv.details_salle.poste_prof === '1'"> Oui </span>
                                     <span v-else> Non </span>
                                 </span> <br>
                                 <span>Climatisation: 
-                                    <span v-if="selectedReserv.details_salle.climatisation.data[0] === 1"> Oui </span>
+                                    <span v-if="selectedReserv.details_salle.climatisation === '1'"> Oui </span>
                                     <span v-else> Non </span>
                                 </span> <br>
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-info" @click="save" :disabled="formatDate(new Date(selectedReserv.details_reservation.date) == dateString && selectedReserv.details_reservation.heure == heure)">Confirmer</button>
+                            <button type="button" class="btn btn-info" @click="save" :disabled="selectedReserv.details_reservation.date == dateString && selectedReserv.details_reservation.heure == heure">Confirmer</button>
                             <button type="button" class="btn btn-secondary" @click="showModifModal=false" data-dismiss="modal">Annuler</button>
                         </div>
                     </div>
@@ -197,7 +197,7 @@ export default {
             this.selectedReserv = this.reservations_infos.filter(reserv => reserv.details_reservation.id == reserv_id)[0];
 
             this.date = new Date(this.selectedReserv.details_reservation.date);
-            this.dateString = this.formatDate(new Date(this.selectedReserv.details_reservation.date));
+            this.dateString = this.selectedReserv.details_reservation.date;
             this.heure = this.selectedReserv.details_reservation.heure;
         },
 
@@ -210,15 +210,15 @@ export default {
             this.salles = [];
             this.users = [];
             this.reservations_infos = [];
-            axios.get("http://localhost:3000/reservations") 
+            axios.get("http://localhost:8888/reservations_salles/src/api/controllers/ReservationsResource.php") 
             .then((response) => {
                 this.reservations = response.data;
 
-                axios.get("http://localhost:3000/salles")
+                axios.get("http://localhost:8888/reservations_salles/src/api/controllers/SallesResource.php")
                 .then((response) => {
                     this.salles = response.data;
 
-                    axios.get("http://localhost:3000/users")
+                    axios.get("http://localhost:8888/reservations_salles/src/api/controllers/UsersResource.php")
                     .then((response) => {
                         this.users = response.data;
                         for (let i = 0; i < this.reservations.length; i++) {
@@ -257,13 +257,16 @@ export default {
         save(){
             this.showModifModal = false;
             this.showReponseModal = true;
-            axios.put("http://localhost:3000/reservations", 
-            {
-                "id_reserv": this.selectedReserv.details_reservation.id,
-                "id_salle": this.selectedReserv.details_salle.id,
-                "date": this.dateString,
-                "heure": this.heure
-            })
+            let formData = new FormData();
+            formData.append('date', this.dateString);
+            formData.append('heure', this.heure);
+            axios.put("http://localhost:8888/reservations_salles/src/api/controllers/ReservationsResource.php", 
+            JSON.stringify({
+                id_reserv: this.selectedReserv.details_reservation.id,
+                id_salle: this.selectedReserv.details_salle.id,
+                date: this.dateString,
+                heure: this.heure
+            }))
             .then((response) => { 
                 console.log(response.data);
                 if (response.data){
@@ -277,13 +280,10 @@ export default {
         deleteReserv(reserv_id){
             this.showReponseModal = true;
             this.showDeleteModal = false;
-            axios.delete("http://localhost:3000/reservations/"+reserv_id)
+            axios.delete("http://localhost:8888/reservations_salles/src/api/controllers/ReservationsResource.php?id="+reserv_id)
                 .then ((response) => {
-                    if (response.data === "ok"){
+                    if (response.data){
                         document.getElementById("reponseReserv").textContent = "Votre réservation à été annulée avec succès"
-                    }
-                    else {
-                        document.getElementById("reponseReserv").textContent = "Votre réservation n'a pas pu être annulée"
                     }
                 });
         },
@@ -299,7 +299,7 @@ export default {
             this.filterResults = this.filters.id != "" ? this.filterResults.filter(reserv => parseInt(reserv.details_reservation.id, 10) == parseInt(this.filters.id, 10)) : this.filterResults;
             this.filterResults = this.filters.userName != "" ? this.filterResults.filter(reserv => reserv.details_user.nom.toLowerCase().includes(this.filters.userName.toLowerCase()) || reserv.details_user.prenom.toLowerCase().includes(this.filters.userName.toLowerCase())) : this.filterResults;
             this.filterResults = this.filters.salleName != "" ? this.filterResults.filter(reserv => reserv.details_salle.nom === this.filters.salleName) : this.filterResults;
-            this.filterResults = this.filters.date != "" ? this.filterResults.filter(reserv => this.formatDate(new Date(reserv.details_reservation.date)) === this.formatDate(this.filters.date)): this.filterResults;
+            this.filterResults = this.filters.date != "" ? this.filterResults.filter(reserv => reserv.details_reservation.date === this.formatDate(this.filters.date)) : this.filterResults;
             this.filterResults = this.filters.time != "" ? this.filterResults.filter(reserv => reserv.details_reservation.heure === this.filters.time) : this.filterResults;
         },
 
@@ -309,16 +309,6 @@ export default {
             this.salleFilterComputed = "";
             this.dateFilterComputed = "";
             this.timeFilterComputed = "";
-        },
-
-        timeExpired(reserv_id){
-            var selectedReserv = this.reservations_infos.filter(reserv => reserv.details_reservation.id == reserv_id)[0];
-            var date = new Date(selectedReserv.details_reservation.date);
-            var heure = selectedReserv.details_reservation.heure;
-            var currDate = new Date();
-            date.setHours(heure === "matin" ? 0 : 12);
-            var dateDiff = currDate - date;
-            return dateDiff <= 86400000 ? false : true;
         }
     },
     computed: {
@@ -328,7 +318,7 @@ export default {
         },
         set: function(input) {
             this.date = input;
-            this.dateString = this.formatDate(new Date(this.date));
+            this.dateString = this.formatDate(this.date);
         }
     },
     heureComputed: {

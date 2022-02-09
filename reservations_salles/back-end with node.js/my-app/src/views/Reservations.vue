@@ -16,7 +16,7 @@
             <tbody>
                 <tr  v-for="reservation in reservations_infos" v-bind:key="reservation.details_reservation.id" v-bind:id="reservation.details_reservation.id">
                     <td class="room_name"> {{ reservation.details_salle.nom }} </td>
-                    <td>{{ formatDate(new Date(reservation.details_reservation.date)) }}&nbsp; &nbsp;{{ reservation.details_reservation.heure === "matin" ? "Matin" : "Après-midi" }} </td>
+                    <td>{{ reservation.details_reservation.date }}&nbsp; &nbsp;{{ reservation.details_reservation.heure === "matin" ? "Matin" : "Après-midi" }} </td>
                     <td class="text-center"><button class="btn btn-sm btn-info " @click="edit"> Modifier </button></td>
                     <td class="text-center"><button class="btn btn-sm btn-danger" type="button" @click="deleteReserv(reservation.details_reservation.id)" :disabled="timeExpired(reservation.details_reservation.id)"> <span v-if="!timeExpired(reservation.details_reservation.id)">Supprimer</span><span v-else>Délai passé</span> </button></td>
                     <td><button class="btn btn-sm btn-secondary" type="button" @click="takeId"> Voir </button></td>
@@ -135,7 +135,6 @@ export default {
       this.selectedReserv = this.reservations_infos.filter(reserv => reserv.details_reservation.id == reserv_id)[0];
       this.date = new Date(this.selectedReserv.details_reservation.date);
       this.dateString = this.selectedReserv.details_reservation.date;
-      this.dateString = this.formatDate(new Date(this.selectedReserv.details_reservation.date));
       this.heure = this.selectedReserv.details_reservation.heure;
     },
 
@@ -155,7 +154,7 @@ export default {
     deleteReserv(reserv_id){
       this.showReponseModal = true;
       if (!this.timeExpired(reserv_id)) {
-        axios.delete("http://localhost:3000/reservations/"+reserv_id)
+        axios.delete("http://localhost:8888/reservations_salles/src/api/controllers/ReservationsResource.php?id="+reserv_id)
         .then ((response) => {
           if (response.data === "ok"){
             document.getElementById("reponseReserv").textContent = "Votre réservation à été annulée avec succès";
@@ -171,18 +170,18 @@ export default {
     saveEdit(){
       this.showModifModal = false;
       this.showReponseModal = true;
-      axios.put("http://localhost:3000/reservations", 
-      {
-        "id_reserv": this.selectedReserv.details_reservation.id,
-        "id_salle": this.selectedReserv.details_salle.id,
-        "date": this.dateString,
-        "heure": this.heure
-      })
+      axios.put("http://localhost:8888/reservations_salles/src/api/controllers/ReservationsResource.php", 
+      JSON.stringify({
+        id_reserv: this.selectedReserv.details_reservation.id,
+        id_salle: this.selectedReserv.details_salle.id,
+        date: this.dateString,
+        heure: this.heure
+      }))
       .then((response) => {
-          if (response.data === "update"){
+        if (response.data){
           document.getElementById("reponseReserv").textContent = "La modification de votre réservation a été validée avec succès"
         }
-        else if (response.data === "exists_reservation"){
+        else {
           document.getElementById("reponseReserv").textContent = "La modification de votre réservation n'est pas valide"
         }
       });
@@ -191,10 +190,10 @@ export default {
     //Mettre à jour les données des réservations
     updateUserReservationsdetails(){
       this.reservations_infos = [];
-      axios.get("http://localhost:3000/reservations/user/"+this.$store.state.id_user)
+      axios.get("http://localhost:8888/reservations_salles/src/api/controllers/ReservationsResource.php?id_user="+this.$store.state.id_user)
       .then((response) => {
         var reservations_user = response.data;
-        axios.get("http://localhost:3000/salles")
+        axios.get("http://localhost:8888/reservations_salles/src/api/controllers/SallesResource.php")
         .then((response) => {
           var liste_salles = response.data;
           for (let i = 0; i < reservations_user.length; i++) {
